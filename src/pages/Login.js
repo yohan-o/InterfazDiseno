@@ -22,16 +22,21 @@ export default function Login() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     if (!username.trim() || !password.trim()) { setError('Ingrese usuario y contraseña.'); return; }
     setLoading(true);
-    setTimeout(() => {
-      const result = login(username.trim(), password);
-      if (result.ok) navigate('/', { replace: true });
-      else { setError(result.error); setLoading(false); }
-    }, 400);
+    
+    // Llamamos a nuestro nuevo login que ahora viaja por internet
+    const result = await login(username.trim(), password);
+    
+    if (result.ok) {
+      navigate('/', { replace: true });
+    } else {
+      setError(result.error);
+      setLoading(false);
+    }
   }
 
   const inputStyle = {
