@@ -1,0 +1,43 @@
+/* src/styles/tokens.css */
+:root {
+  /* Brand Colors */
+  --color-primary: #0F62FE;
+  --color-primary-hover: #0353E9;
+  --color-secondary: #393939;
+
+  /* Semantic Colors */
+  --color-success: #24A148;
+  --color-warning: #F1C21B;
+  --color-error: #DA1E28;
+  --color-info: #0043CE;
+
+  /* Backgrounds & Text */
+  --color-bg-main: #F4F4F4;
+  --color-bg-surface: #FFFFFF;
+  --color-text-main: #161616;
+  --color-text-muted: #525252;
+  --color-text-inverse: #FFFFFF;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Typography */
+  --font-family-base: 'Inter', system-ui, sans-serif;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 20px;
+  --font-size-xl: 24px;
+  
+  /* Borders */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-pill: 16px;
+  
+  /* Shadows */
+  --shadow-card: 0 2px 4px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.05);
+}

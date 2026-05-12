@@ -39,14 +39,46 @@ export function AuthProvider({ children }) {
     saveUsers(users);
   }, [users]);
 
-  function login(username, password) {
-    const found = users.find(u => u.username === username && u.password === password);
-    if (found) {
-      const { password: _, ...safeUser } = found;
-      setUser(safeUser);
-      return { ok: true, user: safeUser };
+  async function login(username, password) {
+    try {
+      // 1. Intentamos hablar con el servidor Backend (el endpoint que acabamos de crear)
+      const response = await fetch('http://localhost:8000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      // 2. Revisamos si el backend nos dijo que sí (status 200)
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Armamos el objeto de usuario tal cual lo espera el Frontend
+        const loggedUser = {
+          username: username,
+          role: data.role,
+          token: data.access_token
+        };
+        
+        setUser(loggedUser); // Guardamos la info del usuario en la memoria de React
+        return { ok: true, user: loggedUser };
+      } 
+      
+      // 3. Si el backend nos rechazó (ej. error 404 o 401)
+      const errorData = await response.json();
+      return { ok: false, error: errorData.detail || 'Error al iniciar sesión' };
+
+    } catch (error) {
+      // 4. Si el backend está apagado o aún no han subido el código, 
+      // entramos a este CATCH y usamos el "simulador" antiguo como respaldo.
+      console.warn("Backend inactivo. Usando login simulado de respaldo...");
+      const found = users.find(u => u.username === username && u.password === password);
+      if (found) {
+        const { password: _, ...safeUser } = found;
+        setUser(safeUser);
+        return { ok: true, user: safeUser };
+      }
+      return { ok: false, error: 'Usuario o contraseña incorrectos (Simulación)' };
     }
-    return { ok: false, error: 'Usuario o contraseña incorrectos' };
   }
 
   function logout() { setUser(null); }
