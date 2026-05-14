@@ -1,15 +1,21 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const DEFAULT_USERS = [
-  { id: 1, username: 'superadmin', password: 'SA@2025!',  role: 'superadmin', nombre: 'Super Administrador', nivelAcceso: 3 },
-  { id: 2, username: 'admin',      password: 'Adm@2025!', role: 'admin',      nombre: 'Administrador',       nivelAcceso: 2 },
-  { id: 3, username: 'operario',   password: 'Op@2025!',  role: 'operario',   nombre: 'Operario',            nivelAcceso: 1 },
+  { id: 1, username: 'superadmin', password: 'SA@2025!',  role: 'superadmin', nombre: 'Super Administrador', nivelAcceso: 3, intentosFallidos: 0, bloqueado: false },
+  { id: 2, username: 'admin',      password: 'Adm@2025!', role: 'admin',      nombre: 'Administrador',       nivelAcceso: 2, intentosFallidos: 0, bloqueado: false },
+  { id: 3, username: 'operario',   password: 'Op@2025!',  role: 'operario',   nombre: 'Operario',            nivelAcceso: 1, intentosFallidos: 0, bloqueado: false },
 ];
 
 function loadUsers() {
   try {
     const saved = localStorage.getItem('asrs_users');
-    return saved ? JSON.parse(saved) : DEFAULT_USERS;
+    const users = saved ? JSON.parse(saved) : DEFAULT_USERS;
+    // Asegurar que todos los usuarios tengan las propiedades de bloqueo
+    return users.map(u => ({
+      ...u,
+      intentosFallidos: u.intentosFallidos ?? 0,
+      bloqueado: u.bloqueado ?? false,
+    }));
   } catch {
     return DEFAULT_USERS;
   }
@@ -40,17 +46,31 @@ export function AuthProvider({ children }) {
   }, [users]);
 
   async function login(username, password) {
+    // 1. Verificar si el usuario existe y está bloqueado
+    const userData = users.find(u => u.username === username);
+    
+    if (userData && userData.bloqueado) {
+      return { ok: false, error: `Cuenta bloqueada. Por favor, contacta al administrador.` };
+    }
+
     try {
-      // 1. Intentamos hablar con el servidor Backend (el endpoint que acabamos de crear)
+      // 2. Intentamos hablar con el servidor Backend
       const response = await fetch('http://localhost:8000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
 
-      // 2. Revisamos si el backend nos dijo que sí (status 200)
+      // 3. Revisamos si el backend nos dijo que sí (status 200)
       if (response.ok) {
         const data = await response.json();
+        
+        // Resetear intentos fallidos en login exitoso
+        if (userData) {
+          setUsers(prev => prev.map(u => 
+            u.username === username ? { ...u, intentosFallidos: 0 } : u
+          ));
+        }
         
         // Armamos el objeto de usuario tal cual lo espera el Frontend
         const loggedUser = {
@@ -59,29 +79,92 @@ export function AuthProvider({ children }) {
           token: data.access_token
         };
         
-        setUser(loggedUser); // Guardamos la info del usuario en la memoria de React
+        setUser(loggedUser);
         return { ok: true, user: loggedUser };
       } 
       
-      // 3. Si el backend nos rechazó (ej. error 404 o 401)
+      // 4. Si el backend nos rechazó, incrementar intentos (para operarios y admins)
       const errorData = await response.json();
+      const puedeBloquearse = userData && (userData.role === 'operario' || userData.role === 'admin');
+      if (puedeBloquearse) {
+        const currentAttempts = (userData.intentosFallidos ?? 0);
+        const newAttempts = currentAttempts + 1;
+        setUsers(prev => prev.map(u => 
+          u.username === username ? { 
+            ...u, 
+            intentosFallidos: newAttempts,
+            bloqueado: newAttempts >= 3
+          } : u
+        ));
+        
+        if (newAttempts >= 3) {
+          return { ok: false, error: '🔒 Cuenta bloqueada por seguridad. Contacta al administrador.' };
+        }
+        return { ok: false, error: `⚠️ Usuario o contraseña incorrectos. Intentos: ${newAttempts}/3` };
+      }
       return { ok: false, error: errorData.detail || 'Error al iniciar sesión' };
 
     } catch (error) {
-      // 4. Si el backend está apagado o aún no han subido el código, 
-      // entramos a este CATCH y usamos el "simulador" antiguo como respaldo.
+      // 5. Fallback al simulador local si el backend está inactivo
       console.warn("Backend inactivo. Usando login simulado de respaldo...");
-      const found = users.find(u => u.username === username && u.password === password);
-      if (found) {
+      
+      const found = users.find(u => u.username === username);
+      
+      if (!found) {
+        return { ok: false, error: 'Usuario no encontrado' };
+      }
+
+      if (found.bloqueado) {
+        return { ok: false, error: `🔒 Cuenta bloqueada. Por favor, contacta al administrador.` };
+      }
+
+      if (found.password === password) {
+        // Login exitoso - resetear intentos
+        setUsers(prev => prev.map(u => 
+          u.username === username ? { ...u, intentosFallidos: 0 } : u
+        ));
         const { password: _, ...safeUser } = found;
         setUser(safeUser);
         return { ok: true, user: safeUser };
       }
-      return { ok: false, error: 'Usuario o contraseña incorrectos (Simulación)' };
+
+      // Contraseña incorrecta - incrementar intentos (para operarios y admins)
+      const puedeBloquearseFallback = found.role === 'operario' || found.role === 'admin';
+      if (puedeBloquearseFallback) {
+        const currentAttempts = (found.intentosFallidos ?? 0);
+        const newAttempts = currentAttempts + 1;
+        setUsers(prev => prev.map(u => 
+          u.username === username ? { 
+            ...u, 
+            intentosFallidos: newAttempts,
+            bloqueado: newAttempts >= 3
+          } : u
+        ));
+
+        if (newAttempts >= 3) {
+          return { ok: false, error: '🔒 Cuenta bloqueada por seguridad. Contacta al administrador.' };
+        }
+
+        return { ok: false, error: `⚠️ Usuario o contraseña incorrectos. Intentos: ${newAttempts}/3` };
+      }
+
+      // Superadmin puede intentar ilimitadamente
+      return { ok: false, error: `⚠️ Usuario o contraseña incorrectos` };
     }
   }
 
   function logout() { setUser(null); }
+
+  function unlockUser(userId, requestingUserRole) {
+    // Solo superadmin puede desbloquear
+    if (requestingUserRole !== 'superadmin') {
+      return { ok: false, error: 'No tienes permiso para desbloquear usuarios' };
+    }
+    setUsers(prev => prev.map(u => 
+      u.id === userId ? { ...u, bloqueado: false, intentosFallidos: 0 } : u
+    ));
+    return { ok: true };
+  }
 
   function addUser({ nombre, username, password, role }) {
     if (users.find(u => u.username === username)) {
@@ -95,6 +178,8 @@ export function AuthProvider({ children }) {
       role,
       nombre: nombre.trim(),
       nivelAcceso,
+      intentosFallidos: 0,
+      bloqueado: false,
     };
     setUsers(prev => [...prev, newUser]);
     return { ok: true };
@@ -109,7 +194,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, users, login, logout, addUser, deleteUser, updateUser }}>
+    <AuthContext.Provider value={{ user, users, login, logout, addUser, deleteUser, updateUser, unlockUser }}>
       {children}
     </AuthContext.Provider>
   );

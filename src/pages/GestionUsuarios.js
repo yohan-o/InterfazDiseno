@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const PRIMARY = '#003366';
 const ACCENT  = '#AD3333';
@@ -17,21 +18,46 @@ const ROLE_LABELS = {
 const EMPTY_FORM = { nombre: '', username: '', password: '', confirmar: '', role: 'operario' };
 
 export default function GestionUsuarios() {
-  const { users, user: currentUser, addUser, deleteUser } = useAuth();
+  // ========== HOOKS (ORDEN CORRECTO) ==========
+  const { users, user: currentUser, addUser, deleteUser, unlockUser } = useAuth();
+  const navigate = useNavigate();
+
+  // Estados
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
+  const [success, setSuccess] = useState('');
+  const [showPasswords, setShowPasswords] = useState({});
+  const [showFormPass, setShowFormPass] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmUnlock, setConfirmUnlock] = useState(null);
+  const [filterRole, setFilterRole] = useState('todos');
+
+  // Effects
+  useEffect(() => {
+    if (currentUser && currentUser.role !== 'superadmin') {
+      navigate('/', { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  const [errors, setErrors] = useState({});
-  const [success, setSuccess] = useState('');
-  const [showPasswords, setShowPasswords] = useState({});
-  const [showFormPass, setShowFormPass] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(null);
-  const [filterRole, setFilterRole] = useState('todos');
+
+  // ========== VALIDACIONES Y CONDICIONES ==========
+  if (currentUser?.role !== 'superadmin') {
+    return (
+      <div style={{ padding: '40px 28px', fontFamily: FONT, textAlign: 'center', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: ACCENT, fontSize: '16px', fontWeight: '600' }}>
+          🔐 Acceso denegado. Solo el Super Admin puede gestionar usuarios.
+        </div>
+      </div>
+    );
+  }
+
+  // ========== FUNCIONES ==========
 
   function validate() {
     const e = {};
@@ -63,6 +89,15 @@ export default function GestionUsuarios() {
     if (u.id === currentUser?.id) return;
     deleteUser(u.id);
     setConfirmDelete(null);
+  }
+
+  function handleUnlock(u) {
+    const result = unlockUser(u.id, currentUser?.role);
+    if (result.ok) {
+      setConfirmUnlock(null);
+      setSuccess(`Usuario "${u.username}" desbloqueado exitosamente`);
+      setTimeout(() => setSuccess(''), 3000);
+    }
   }
 
   const filtered = filterRole === 'todos' ? users : users.filter(u => u.role === filterRole);
@@ -272,6 +307,11 @@ export default function GestionUsuarios() {
                               fontWeight: '700', background: 'rgba(26,158,90,0.1)', color: GREEN,
                               fontFamily: FONT }}>● Sesión activa</span>
                           )}
+                          {u.bloqueado && (
+                            <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '10px',
+                              fontWeight: '700', background: 'rgba(173,51,51,0.1)', color: ACCENT,
+                              fontFamily: FONT }}>🔒 Bloqueado</span>
+                          )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '3px' }}>
                           <span style={{ fontFamily: MONO, fontSize: '12px', color: PRIMARY }}>@{u.username}</span>
@@ -281,6 +321,15 @@ export default function GestionUsuarios() {
                           <span style={{ fontSize: '11px', color: '#999', fontFamily: FONT }}>
                             Nivel {meta.nivel}
                           </span>
+                          {currentUser?.role === 'superadmin' && (u.role === 'operario' || u.role === 'admin') && (
+                            <span style={{ 
+                              fontSize: '11px', color: '#666', fontFamily: MONO,
+                              padding: '2px 6px', borderRadius: '4px',
+                              background: u.bloqueado ? 'rgba(173,51,51,0.1)' : 'rgba(212,139,0,0.1)'
+                            }}>
+                              {u.bloqueado ? '🔒 Bloqueado' : `Intentos: ${u.intentosFallidos ?? 0}/3`}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -295,6 +344,34 @@ export default function GestionUsuarios() {
                           fontFamily: FONT, color: '#555' }}>
                         {showPasswords[u.id] ? '🙈' : '👁️'}
                       </button>
+
+                      {/* Desbloquear */}
+                      {currentUser?.role === 'superadmin' && (u.role === 'operario' || u.role === 'admin') && u.bloqueado && (
+                        confirmUnlock === u.id ? (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button onClick={() => handleUnlock(u)}
+                              style={{ padding: '6px 12px', borderRadius: '7px', cursor: 'pointer',
+                                background: GREEN, border: 'none', color: '#FFF',
+                                fontSize: '12px', fontWeight: '600', fontFamily: FONT }}>
+                              Desbloquear
+                            </button>
+                            <button onClick={() => setConfirmUnlock(null)}
+                              style={{ padding: '6px 10px', borderRadius: '7px', cursor: 'pointer',
+                                background: '#F5F7FA', border: '1px solid #DADADA',
+                                fontSize: '12px', color: '#555', fontFamily: FONT }}>
+                              Cancelar
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmUnlock(u.id)}
+                            title="Desbloquear usuario"
+                            style={{ padding: '6px 10px', borderRadius: '7px', cursor: 'pointer',
+                              background: 'rgba(26,158,90,0.07)', border: '1px solid rgba(26,158,90,0.2)',
+                              fontSize: '13px', color: GREEN }}>
+                            🔓
+                          </button>
+                        )
+                      )}
 
                       {/* Eliminar */}
                       {!esCurrent && (
