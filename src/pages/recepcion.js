@@ -38,10 +38,11 @@ export default function Recepcion() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#f5f5f5"
+      background: "#f4f6f9",
+      fontFamily: "'Century Gothic', Candara, 'Trebuchet MS', sans-serif",
     }}>
       {/* CONTENT */}
-      <div style={{padding: "30px"}}>
+      <div style={{padding: "28px"}}>
         
         {/* MAIN GRID */}
         <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '20px'}}>
