@@ -6,6 +6,7 @@ import Dispensa from './Dispensa';
 import Recepcion from './recepcion';
 import Robot from './robot';
 import GestionUsuarios from './GestionUsuarios';
+import AgvSupervisorWidget from '../components/AgvSupervisorWidget';
 
 /* ── Paleta oficial Universidad de Pamplona ── */
 const PRIMARY = '#003366';
@@ -280,6 +281,10 @@ function OperarioView({ datos, hora, estadoSistema, conexion, isMobile }) {
           </div>
         </div>
       </div>
+      
+      {/* Nuevo Widget Supervisor AGV */}
+      <AgvSupervisorWidget isMobile={isMobile} />
+      
     </div>
   );
 }

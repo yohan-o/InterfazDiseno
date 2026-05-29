@@ -9,13 +9,18 @@ const DEFAULT_USERS = [
 function loadUsers() {
   try {
     const saved = localStorage.getItem('asrs_users');
-    const users = saved ? JSON.parse(saved) : DEFAULT_USERS;
-    // Asegurar que todos los usuarios tengan las propiedades de bloqueo
-    return users.map(u => ({
+    let users = saved ? JSON.parse(saved) : DEFAULT_USERS;
+    
+    // Forzar el desbloqueo general para resetear el estado guardado del usuario local
+    users = users.map(u => ({
       ...u,
-      intentosFallidos: u.intentosFallidos ?? 0,
-      bloqueado: u.bloqueado ?? false,
+      intentosFallidos: 0,
+      bloqueado: false,
     }));
+    
+    // Guardar el estado limpio para que quede permanente
+    localStorage.setItem('asrs_users', JSON.stringify(users));
+    return users;
   } catch {
     return DEFAULT_USERS;
   }
@@ -68,7 +73,7 @@ export function AuthProvider({ children }) {
         // Resetear intentos fallidos en login exitoso
         if (userData) {
           setUsers(prev => prev.map(u => 
-            u.username === username ? { ...u, intentosFallidos: 0 } : u
+            u.username === username ? { ...u, intentosFallidos: 0, bloqueado: false } : u
           ));
         }
         
@@ -105,51 +110,9 @@ export function AuthProvider({ children }) {
       return { ok: false, error: errorData.detail || 'Error al iniciar sesión' };
 
     } catch (error) {
-      // 5. Fallback al simulador local si el backend está inactivo
-      console.warn("Backend inactivo. Usando login simulado de respaldo...");
-      
-      const found = users.find(u => u.username === username);
-      
-      if (!found) {
-        return { ok: false, error: 'Usuario no encontrado' };
-      }
-
-      if (found.bloqueado) {
-        return { ok: false, error: `🔒 Cuenta bloqueada. Por favor, contacta al administrador.` };
-      }
-
-      if (found.password === password) {
-        // Login exitoso - resetear intentos
-        setUsers(prev => prev.map(u => 
-          u.username === username ? { ...u, intentosFallidos: 0 } : u
-        ));
-        const { password: _, ...safeUser } = found;
-        setUser(safeUser);
-        return { ok: true, user: safeUser };
-      }
-
-      // Contraseña incorrecta - incrementar intentos (para operarios y admins)
-      const puedeBloquearseFallback = found.role === 'operario' || found.role === 'admin';
-      if (puedeBloquearseFallback) {
-        const currentAttempts = (found.intentosFallidos ?? 0);
-        const newAttempts = currentAttempts + 1;
-        setUsers(prev => prev.map(u => 
-          u.username === username ? { 
-            ...u, 
-            intentosFallidos: newAttempts,
-            bloqueado: newAttempts >= 3
-          } : u
-        ));
-
-        if (newAttempts >= 3) {
-          return { ok: false, error: '🔒 Cuenta bloqueada por seguridad. Contacta al administrador.' };
-        }
-
-        return { ok: false, error: `⚠️ Usuario o contraseña incorrectos. Intentos: ${newAttempts}/3` };
-      }
-
-      // Superadmin puede intentar ilimitadamente
-      return { ok: false, error: `⚠️ Usuario o contraseña incorrectos` };
+      // 5. Retornar error si el backend está inactivo en lugar de usar la base de datos interna simulada
+      console.error("Backend inactivo:", error);
+      return { ok: false, error: '❌ No se pudo conectar al servidor. El backend está inactivo o desconectado.' };
     }
   }
 
