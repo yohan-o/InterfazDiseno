@@ -1,49 +1,57 @@
 import React from "react";
 
+const PRIMARY = '#003366';
+const WARN    = '#D48B00';
+const FONT    = "'Century Gothic', Candara, 'Trebuchet MS', sans-serif";
+const MONO    = "'Roboto Mono', monospace";
+
 export default function LocalAlerts({ alerts = [] }) {
   return (
-    <div style={{background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)'}}>
-      <h3 style={{margin: '0 0 20px 0', fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px'}}>
+    <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,51,102,0.08)', fontFamily: FONT }}>
+      <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: 700, color: PRIMARY, display: 'flex', alignItems: 'center', gap: '8px' }}>
         ⚠️ Alarmas Locales
+        {alerts.length > 0 && (
+          <span style={{
+            background: '#fdf3e0', color: WARN,
+            padding: '2px 8px', borderRadius: '12px',
+            fontSize: '12px', fontWeight: 700,
+            border: `1px solid ${WARN}40`,
+          }}>
+            {alerts.length}
+          </span>
+        )}
       </h3>
-      
+
       {alerts.map((alert, index) => (
         <div key={index} style={{
-          padding: '16px',
-          background: '#e3f2fd',
-          border: '1px solid #2196f3',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px',
-          marginBottom: alerts.length > 1 && index < alerts.length - 1 ? '12px' : '0'
+          padding: '14px 16px', background: '#fdf3e0',
+          border: `1px solid ${WARN}50`, borderRadius: '8px',
+          display: 'flex', alignItems: 'flex-start', gap: '12px',
+          marginBottom: index < alerts.length - 1 ? '10px' : '0',
         }}>
           <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            background: '#2196f3',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '16px',
-            flexShrink: 0
+            width: '30px', height: '30px', borderRadius: '50%',
+            background: WARN, color: 'white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '14px', fontWeight: 700, flexShrink: 0,
           }}>
-            ℹ️
+            !
           </div>
           <div>
-            <div style={{fontSize: '14px', fontWeight: 600, marginBottom: '4px'}}>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#444', marginBottom: '4px' }}>
               {alert.message}
             </div>
-            <div style={{fontSize: '12px', color: '#666'}}>{alert.time}</div>
+            <div style={{ fontSize: '11px', color: '#999', fontFamily: MONO }}>{alert.time}</div>
           </div>
         </div>
       ))}
-      
+
       {alerts.length === 0 && (
-        <div style={{padding: '20px', textAlign: 'center', color: '#999'}}>
-          No hay alarmas activas
+        <div style={{
+          padding: '32px 20px', textAlign: 'center', color: '#aaa',
+          background: '#f9f9f9', borderRadius: '8px', border: '1px solid #eee',
+        }}>
+          Sin alarmas activas
         </div>
       )}
     </div>

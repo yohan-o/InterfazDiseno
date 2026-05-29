@@ -24,24 +24,25 @@ const ROLE_META = {
 
 const SIDEBAR_ITEMS = {
   operario: [
-    { icon: '📊', label: 'Dashboard',  key: 'dashboard' },
-    { icon: '🚚', label: 'Dispensa',   key: 'dispensa' },
-    { icon: '📦', label: 'Recepción',  key: 'recepcion' },
-    { icon: '🗄️', label: 'Inventario', key: 'almacenamiento' },
-    { icon: '🤖', label: 'Robots',     key: 'robot' },
+    { icon: '📊', label: 'Dashboard',    key: 'dashboard' },
+    { icon: '📋', label: 'Crear Producto', key: 'dispensa' },
+    { icon: '📦', label: 'Recepción',    key: 'recepcion' },
+    { icon: '🗄️', label: 'Inventario',  key: 'almacenamiento' },
+    { icon: '🤖', label: 'Robots',       key: 'robot' },
   ],
   admin: [
-    { icon: '📊', label: 'Dashboard',  key: 'dashboard' },
-    { icon: '🗄️', label: 'Inventario', key: 'almacenamiento' },
-    { icon: '🤖', label: 'Robots',     key: 'robot' }
+    { icon: '📊', label: 'Dashboard',     key: 'dashboard' },
+    { icon: '📋', label: 'Crear Producto', key: 'dispensa' },
+    { icon: '🗄️', label: 'Inventario',   key: 'almacenamiento' },
+    { icon: '🤖', label: 'Robots',        key: 'robot' }
   ],
   superadmin: [
-    { icon: '📊', label: 'Dashboard',  key: 'dashboard' },
-    { icon: '🚚', label: 'Dispensa',   key: 'dispensa' },
-    { icon: '📦', label: 'Recepción',  key: 'recepcion' },
-    { icon: '🗄️', label: 'Inventario', key: 'almacenamiento' },
-    { icon: '🤖', label: 'Robots',     key: 'robot' },
-    { icon: '👥', label: 'Usuarios',   key: 'usuarios' },
+    { icon: '📊', label: 'Dashboard',    key: 'dashboard' },
+    { icon: '📋', label: 'Crear Producto', key: 'dispensa' },
+    { icon: '📦', label: 'Recepción',    key: 'recepcion' },
+    { icon: '🗄️', label: 'Inventario',  key: 'almacenamiento' },
+    { icon: '🤖', label: 'Robots',       key: 'robot' },
+    { icon: '👥', label: 'Usuarios',     key: 'usuarios' },
   ]
 };
 
