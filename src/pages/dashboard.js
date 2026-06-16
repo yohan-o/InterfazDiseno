@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Almacenamiento from './Almacenamiento';
 import Dispensa from './Dispensa';
 import Recepcion from './recepcion';
+import CrearRobot from './CrearRobot'; 
 import Robot from './robot';
 import GestionUsuarios from './GestionUsuarios';
 import AgvSupervisorWidget from '../components/AgvSupervisorWidget';
@@ -35,6 +36,7 @@ const SIDEBAR_ITEMS = {
     { icon: '📊', label: 'Dashboard',     key: 'dashboard' },
     { icon: '📋', label: 'Crear Producto', key: 'dispensa' },
     { icon: '🗄️', label: 'Inventario',   key: 'almacenamiento' },
+    { icon: '💿', label: 'Crear Robot',  key: 'crear-robot' },
     { icon: '🤖', label: 'Robots',        key: 'robot' }
   ],
   superadmin: [
@@ -42,6 +44,7 @@ const SIDEBAR_ITEMS = {
     { icon: '📋', label: 'Crear Producto', key: 'dispensa' },
     { icon: '📦', label: 'Recepción',    key: 'recepcion' },
     { icon: '🗄️', label: 'Inventario',  key: 'almacenamiento' },
+    { icon: '💿', label: 'Crear Robot',  key: 'crear-robot' },
     { icon: '🤖', label: 'Robots',       key: 'robot' },
     { icon: '👥', label: 'Usuarios',     key: 'usuarios' },
   ]
@@ -714,6 +717,7 @@ export default function Dashboard({
       case 'almacenamiento': return <Almacenamiento />;
       case 'dispensa':       return <Dispensa />;
       case 'recepcion':      return <Recepcion />;
+      case 'crear-robot':   return <CrearRobot />;
       case 'robot':          return <Robot />;
       case 'usuarios':       return <GestionUsuarios />;
       default:
